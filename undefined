@@ -1,0 +1,77 @@
+if (original) {
+    // Edit existing category
+    const index = categories.indexOf(original);
+    if (index !== -1) {
+        categories[index] = newName;
+        // Update contents that reference the old category name
+        const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+        contents.forEach(content => {
+            if (content.category === original) {
+                content.category = newName;
+            }
+        });
+        localStorage.setItem('contents', JSON.stringify(contents));
+    }
+} else {
+    // Add new category
+    if (!newName) return;
+    if (categories.includes(newName)) {
+        alert('Categoria já existe!');
+        return;
+    }
+    categories.push(newName);
+}
+
+// Remove category from contents
+const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+contents.forEach(c => {
+    if(c.category === original) c.category = '';
+});
+localStorage.setItem('contents', JSON.stringify(contents));
+
+localStorage.setItem('categories', JSON.stringify(categories));
+
+function populateCategories() {
+    const categorySelector = document.getElementById('categorySelector');
+    categorySelector.innerHTML = categories.map(category => `
+        <button onclick="selectCategory('${category}')" class="bg-white p-6 rounded-lg shadow-lg card-hover text-green-600 hover:bg-green-50 transition-colors">
+            <h3 class="text-lg font-bold">${category}</h3>
+        </button>
+    `).join('');
+}
+
+function loadCategoriesList() {
+    const grid = document.getElementById('contentGrid');
+    const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+    let filtered = contents;
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    if (categoryFilter) {
+        filtered = contents.filter(content => content.category.toLowerCase() === categoryFilter.toLowerCase());
+    }
+    grid.innerHTML = filtered.map(content => `
+        <div class="bg-green-100 p-6 rounded-lg shadow-lg card-hover" 
+             data-category="${content.category.toLowerCase()}"
+             data-tags="${content.title.toLowerCase()} ${content.description.toLowerCase()}">
+            <h3 class="text-lg font-bold">${content.title}</h3>
+            <p class="text-sm">${content.description}</p>
+            <p class="text-sm">Category: ${content.category}</p>
+            <p class="text-sm">Type: ${content.type}</p>
+            <video width="100%" height="240" controls>
+                <source src="${content.url}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    `).join('');
+}
+
+function loadContentsList() {
+    // This function was not defined in the original code, 
+    // so it is assumed to be defined elsewhere in the codebase.
+}
+
+populateCategories();
+loadCategoriesList();
+loadContentsList();
+showSuccessModal();
+this.reset();
+document.getElementById('categoryModal').classList.add('hidden');
