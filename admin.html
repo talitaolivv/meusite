@@ -1,0 +1,480 @@
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white">
+    <header class="bg-green-600 shadow-sm">
+        <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold">Painel Administrativo</h1>
+            </div>
+            <button onclick="logout()" class="text-red-600 hover:text-red-700">Sair</button>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <section class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Adicionar Novo Conteúdo</h2>
+                <form id="contentForm" class="space-y-4">
+                    <div>
+                        <label class="block mb-2">Título:</label>
+                        <input type="text" id="contentTitle" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block mb-2">Descrição:</label>
+                        <textarea id="contentDescription" required class="w-full p-2 border rounded"></textarea>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Categoria:</label>
+                        <div class="flex gap-2">
+                            <select id="contentCategory" required class="w-full p-2 border rounded">
+                                <!-- Categories will be populated by JS -->
+                            </select>
+                            <button type="button" onclick="showCategoryModal()" class="px-4 bg-gray-200 rounded hover:bg-gray-300">+</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Tipo de Conteúdo:</label>
+                        <select id="contentType" required class="w-full p-2 border rounded">
+                            <option value="video">Vídeo</option>
+                            <option value="pdf">PDF</option>
+                            <option value="outro">Outro Arquivo</option>
+                        </select>
+                    </div>
+                    <div id="contentUrlSection">
+                        <div data-type="video" class="upload-section">
+                            <label class="block mb-2">Adicionar ficheiro:</label>
+                            <input type="file" id="contentVideo" accept="video/*" class="w-full p-2 border rounded">
+                        </div>
+                        <div data-type="pdf" class="upload-section hidden">
+                            <label class="block mb-2">Upload do PDF:</label>
+                            <input type="file" id="contentPdf" accept=".pdf" class="w-full p-2 border rounded">
+                        </div>
+                        <div data-type="outro" class="upload-section hidden">
+                            <label class="block mb-2">Upload de Arquivo:</label>
+                            <input type="file" id="contentFile" class="w-full p-2 border rounded">
+                        </div>
+                    </div>
+                    <input type="hidden" id="editIndex" value="-1">
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                        Salvar Conteúdo
+                    </button>
+                </form>
+            </section>
+
+            <!-- Add new Gerenciar Categorias section -->
+            <section class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Gerenciar Categorias</h2>
+                <div id="categoriesList" class="space-y-2"></div>
+            </section>
+
+            <!-- Seção de Gestão de Usuários -->
+            <section class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Gerenciar Usuários</h2>
+                <div class="space-y-4">
+                    <button onclick="showUserModal()" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                        Criar Novo Usuário
+                    </button>
+                    <div id="usersList" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <section class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Conteúdos Existentes</h2>
+                <div id="contentsList" class="space-y-4"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal de Criação de Usuário -->
+    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Novo Usuário</h2>
+            <form id="userForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2">Nome de Usuário:</label>
+                    <input type="text" id="newUsername" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block mb-2">Senha:</label>
+                    <input type="password" id="newPassword" required class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                    Criar Usuário
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Alterar Senha</h2>
+            <form id="passwordForm" class="space-y-4">
+                <input type="hidden" id="targetUsername">
+                <div>
+                    <label class="block mb-2">Nova Senha:</label>
+                    <input type="password" id="newPassword" required class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                    Alterar Senha
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4" id="categoryModalTitle">Nova Categoria</h2>
+            <form id="categoryForm" class="space-y-4">
+                <input type="hidden" id="originalCategory">
+                <div>
+                    <label class="block mb-2">Nome da Categoria:</label>
+                    <input type="text" id="newCategory" required class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                    Salvar Categoria
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full text-center">
+            <h3 class="text-xl font-bold mb-4">Salvo com sucesso!</h3>
+            <button onclick="hideSuccessModal()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Verificar autenticação
+        if(!sessionStorage.getItem('authenticated')) {
+            window.location.href = 'index.html';
+        }
+
+        // Logout
+        function logout() {
+            sessionStorage.removeItem('authenticated');
+            window.location.href = 'index.html';
+        }
+
+        // Funções para o modal de sucesso
+        function showSuccessModal() {
+            document.getElementById('successModal').classList.remove('hidden');
+            document.getElementById('successModal').classList.add('flex');
+        }
+
+        function hideSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('successModal').classList.remove('flex');
+        }
+
+        // Category Management
+        function showCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('hidden');
+            document.getElementById('categoryModal').classList.add('flex');
+        }
+
+        document.getElementById('categoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const original = document.getElementById('originalCategory').value;
+            const newCat = document.getElementById('newCategory').value.trim();
+            let categories = JSON.parse(localStorage.getItem('categories') || '[]');
+
+            if(original) { // Edit mode
+                const index = categories.indexOf(original);
+                if(index > -1 && newCat) {
+                    // Update category name
+                    categories[index] = newCat;
+                    
+                    // Update all contents with old category
+                    const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+                    contents.forEach(c => {
+                        if(c.category === original) c.category = newCat;
+                    });
+                    localStorage.setItem('contents', JSON.stringify(contents));
+                }
+            } else { // Add new
+                if(!categories.includes(newCat) && newCat) {
+                    categories.push(newCat);
+                }
+            }
+
+            localStorage.setItem('categories', JSON.stringify(categories));
+            populateCategories();
+            loadCategoriesList();
+            loadContentsList();
+            this.reset();
+            document.getElementById('categoryModal').classList.add('hidden');
+        });
+
+        // Populate categories on load
+        function populateCategories() {
+            const categories = JSON.parse(localStorage.getItem('categories') || '[]');
+            const defaultCategories = ["impressoras", "redes"];
+            if (categories.length === 0) {
+                categories.push(...defaultCategories);
+                localStorage.setItem('categories', JSON.stringify(categories));
+            }
+            const select = document.getElementById('contentCategory');
+            select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            // Also populate homepage categories (new addition)
+            const categorySelector = document.getElementById('categorySelector');
+            if(categorySelector) {
+                categorySelector.innerHTML = categories.map(c => `
+                    <button onclick="selectCategory('${c}')" class="bg-white p-6 rounded-lg shadow-lg card-hover text-green-600 hover:bg-green-50 transition-colors">
+                        <h3 class="text-lg font-bold">${c}</h3>
+                    </button>
+                `).join('');
+            }
+            loadCategoriesList(); 
+        }
+        populateCategories();
+
+        // Atualizar seção de upload conforme tipo de conteúdo
+        document.getElementById('contentType').addEventListener('change', function() {
+            const type = this.value;
+            document.querySelectorAll('.upload-section').forEach(div => {
+                div.classList.toggle('hidden', div.dataset.type !== type);
+            });
+            document.querySelector(`.upload-section[data-type="${type}"] input`).required = true;
+        });
+
+        // Carregar lista de conteúdos
+        function loadContentsList() {
+            const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+            const container = document.getElementById('contentsList');
+            
+            container.innerHTML = contents.map((content, index) => `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-bold">${content.title}</h3>
+                    <p class="text-sm text-gray-600">${content.description}</p>
+                    <div class="mt-2 flex gap-2">
+                        <button onclick="editContent(${index})" class="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Editar</button>
+                        <button onclick="deleteContent(${index})" class="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteContent(index) {
+            if(confirm('Tem certeza que deseja excluir este conteúdo?')) {
+                const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+                contents.splice(index, 1);
+                localStorage.setItem('contents', JSON.stringify(contents));
+                loadContentsList();
+                showSuccessModal();
+            }
+        }
+
+        function editContent(index) {
+            const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+            const content = contents[index];
+            
+            document.getElementById('contentTitle').value = content.title;
+            document.getElementById('contentDescription').value = content.description;
+            document.getElementById('contentCategory').value = content.category;
+            document.getElementById('contentType').value = content.type;
+            document.getElementById('editIndex').value = index;
+        }
+
+        const contentForm = document.getElementById('contentForm');
+        contentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('contentType').value;
+            const fileInput = document.querySelector(`.upload-section[data-type="${type}"] input`);
+            const file = fileInput.files[0];
+            
+            if (!file && document.getElementById('editIndex').value === '-1') {
+                return alert('Selecione um arquivo!');
+            }
+
+            let contentUrl = '';
+            if (file) {
+                contentUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            } else if (document.getElementById('editIndex').value !== '-1') {
+                contentUrl = contents[editIndex].url;
+            }
+
+            const content = {
+                title: document.getElementById('contentTitle').value,
+                description: document.getElementById('contentDescription').value,
+                category: document.getElementById('contentCategory').value,
+                type: type,
+                url: contentUrl,
+                timestamp: new Date().toISOString()
+            };
+
+            const editIndex = document.getElementById('editIndex').value;
+            const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+
+            if (editIndex !== '-1') {
+                contents[editIndex] = content;
+            } else {
+                contents.push(content);
+            }
+
+            localStorage.setItem('contents', JSON.stringify(contents));
+            this.reset();
+            document.getElementById('editIndex').value = '-1';
+            loadContentsList();
+            showSuccessModal();
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        });
+
+        // Gerenciamento de Usuários
+        function showUserModal() {
+            document.getElementById('userModal').classList.remove('hidden');
+            document.getElementById('userModal').classList.add('flex');
+        }
+
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = {
+                username: document.getElementById('newUsername').value,
+                password: document.getElementById('newPassword').value
+            };
+
+            const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
+            users.push(user);
+            localStorage.setItem('adminUsers', JSON.stringify(users));
+            loadUsersList(); // Atualizar a lista
+            showSuccessModal();
+            this.reset();
+            document.getElementById('userModal').classList.add('hidden');
+        });
+
+        // Função para carregar lista de usuários
+        function loadUsersList() {
+            const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
+            const container = document.getElementById('usersList');
+            
+            container.innerHTML = users.map(user => `
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                    <span>${user.username}</span>
+                    <div class="flex gap-2">
+                        <button onclick="showPasswordModal('${user.username}')" 
+                                class="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700">
+                            Trocar Senha
+                        </button>
+                        <button onclick="deleteUser('${user.username}')" 
+                                class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
+                            Excluir
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Funções para gerenciamento de usuários
+        function deleteUser(username) {
+            if(confirm(`Tem certeza que deseja excluir o usuário ${username}?`)) {
+                const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
+                const filtered = users.filter(u => u.username !== username);
+                localStorage.setItem('adminUsers', JSON.stringify(filtered));
+                loadUsersList();
+                showSuccessModal();
+            }
+        }
+
+        function showPasswordModal(username) {
+            document.getElementById('targetUsername').value = username;
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('passwordModal').classList.add('flex');
+        }
+
+        // Manipulador de alteração de senha
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('targetUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            const users = JSON.parse(localStorage.getItem('adminUsers') || '[]');
+            const updated = users.map(u => 
+                u.username === username ? {...u, password: newPassword} : u
+            );
+            
+            localStorage.setItem('adminUsers', JSON.stringify(updated));
+            loadUsersList();
+            showSuccessModal();
+            this.reset();
+            document.getElementById('passwordModal').classList.add('hidden');
+        });
+
+        // Category Management Updates
+        function loadCategoriesList() {
+            const categories = JSON.parse(localStorage.getItem('categories') || '[]');
+            const container = document.getElementById('categoriesList');
+            
+            container.innerHTML = categories.map(category => `
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                    <span>${category}</span>
+                    <div class="flex gap-2">
+                        <button onclick="editCategory('${category}')" 
+                                class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+                            Editar
+                        </button>
+                        <button onclick="deleteCategory('${category}')" 
+                                class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
+                            Excluir
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editCategory(category) {
+            document.getElementById('newCategory').value = category;
+            document.getElementById('originalCategory').value = category;
+            document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
+            document.getElementById('categoryModal').classList.remove('hidden');
+            document.getElementById('categoryModal').classList.add('flex');
+        }
+
+        function deleteCategory(category) {
+            if(confirm(`Tem certeza que deseja excluir a categoria "${category}"?`)) {
+                const categories = JSON.parse(localStorage.getItem('categories') || '[]');
+                const index = categories.indexOf(category);
+                if(index > -1) {
+                    categories.splice(index, 1);
+                    localStorage.setItem('categories', JSON.stringify(categories));
+                    
+                    // Remove category from all existing contents
+                    const contents = JSON.parse(localStorage.getItem('contents') || '[]');
+                    contents.forEach(c => {
+                        if(c.category === category) c.category = '';
+                    });
+                    localStorage.setItem('contents', JSON.stringify(contents));
+                    
+                    populateCategories();
+                    loadCategoriesList();
+                    loadContentsList();
+                    showSuccessModal();
+                }
+            }
+        }
+
+        // Carregar usuários ao iniciar
+        loadUsersList();
+        loadContentsList();
+        loadCategoriesList();
+    </script>
+</body>
+</html>
